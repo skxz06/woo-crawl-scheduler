@@ -1,0 +1,171 @@
+{% extends "layout.html" %}
+
+{% block title %}采集任务{% endblock %}
+
+{# 让顶部“订单管理”导航高亮 #}
+{% block nav_order_active %}active{% endblock %}
+
+{% block page_title %}采集<span>任务</span>{% endblock %}
+
+{# 标题右侧的“创建订单”按钮 #}
+{% block toolbar_action %}
+<a href="/order/export.csv" class="btn-back">导出 CSV</a>
+<a href="/order/create" class="btn-create">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <line x1="12" y1="5" x2="12" y2="19"></line>
+        <line x1="5" y1="12" x2="19" y2="12"></line>
+    </svg>
+    创建订单
+</a>
+{% endblock %}
+
+{# 仅本页用到的表格与状态徽章样式 #}
+{% block extra_styles %}
+tbody td {
+    vertical-align: middle;
+}
+
+tbody tr {
+    transition: background-color 0.2s ease;
+}
+
+tbody tr:nth-child(even) {
+    background-color: #fafbfd;
+}
+
+tbody tr:hover {
+    background-color: #eef3ff;
+}
+
+tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.shop-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-width: 360px;
+}
+
+.shop-cell strong {
+    color: #1f2d3d;
+}
+
+.shop-cell span {
+    color: #64748b;
+    font-size: 12px;
+    word-break: break-all;
+}
+
+.retry-button {
+    border: 0;
+    border-radius: 999px;
+    padding: 6px 12px;
+    background: #eef3ff;
+    color: #3b5bdb;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.empty-state {
+    padding: 60px 20px !important;
+    text-align: center;
+    color: #94a3b8;
+    font-size: 14px;
+}
+
+/* ================= 状态徽章 ================= */
+.status-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.4;
+    letter-spacing: 0.3px;
+    border: 1px solid transparent;
+    white-space: nowrap;
+}
+
+.status-1 { color: #b45309; background-color: #fef3c7; border-color: #fde68a; }
+.status-2 { color: #1d4ed8; background-color: #dbeafe; border-color: #bfdbfe; }
+.status-3 { color: #047857; background-color: #d1fae5; border-color: #a7f3d0; }
+.status-4 { color: #b91c1c; background-color: #fee2e2; border-color: #fecaca; }
+.status-other { color: #475569; background-color: #e2e8f0; border-color: #cbd5e1; }
+
+/* 移动端表格适配 */
+@media (max-width: 720px) {
+    .table-wrapper {
+        overflow-x: auto;
+        border-radius: 10px;
+    }
+
+    thead th,
+    tbody td {
+        padding: 12px 14px;
+    }
+}
+{% endblock %}
+
+{# 主体内容：订单表格 #}
+{% block content %}
+<div class="metrics-bar">
+    <div class="metric-card"><span>在线 Worker</span><strong>{{ workers|join("、") if workers else "无" }}</strong></div>
+    <div class="metric-card"><span>队列</span><strong>{{ metrics.queued }}</strong></div>
+    <div class="metric-card"><span>未确认</span><strong>{{ metrics.pending }}</strong></div>
+    <div class="metric-card"><span>死信</span><strong>{{ metrics.dead }}</strong></div>
+</div>
+<div class="table-wrapper">
+    <table>
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>平台 / 店铺</th>
+            <th>页数</th>
+            <th>状态</th>
+            <th>Worker</th>
+            <th>用户名</th>
+            <th>操作</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% if data_list %}
+            {% for item in data_list %}
+            <tr>
+                <td>{{ item.id }}</td>
+                <td>
+                    <div class="shop-cell">
+                        <strong>{{ item.platform }}</strong>
+                        <span>{{ item.url }}</span>
+                    </div>
+                </td>
+                <td>{{ item.count }} 页 / {{ item.per_page }} 条</td>
+                <td>
+                    <span class="status-badge {% if item.status in [1, 2, 3, 4] %}status-{{ item.status }}{% else %}status-other{% endif %}">
+                        {{ status_dict[item.status] }}
+                    </span>
+                </td>
+                <td>{{ item.worker_name or "-" }}</td>
+                <td>{{ item.real_name }}</td>
+                <td>
+                    {% if item.status != 2 %}
+                    <form action="/order/{{ item.id }}/retry" method="post">
+                        <button class="retry-button" type="submit">重新执行</button>
+                    </form>
+                    {% else %}
+                    -
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        {% else %}
+            <tr>
+                <td colspan="7" class="empty-state">暂无订单数据</td>
+            </tr>
+        {% endif %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

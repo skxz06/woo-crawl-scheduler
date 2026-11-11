@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>系统登录</title>
+    <style>
+        /* 1. 全局重置与背景设置 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            /* 精美的渐变背景 */
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* 2. 登录卡片容器 */
+        .login-card {
+            background: #ffffff;
+            width: 100%;
+            max-width: 400px;
+            padding: 40px 30px;
+            border-radius: 15px;
+            /* 高级阴影效果，增加立体感 */
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease;
+        }
+
+        .login-card:hover {
+            transform: translateY(-5px);
+        }
+
+        /* 3. 标题样式 */
+        .login-card h2 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 26px;
+            font-weight: 600;
+        }
+
+        /* 4. 表单输入组样式 */
+        .input-group {
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #666;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        /* 输入框和下拉框统一样式 */
+        .input-group input,
+        .input-group select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 15px;
+            outline: none;
+            transition: all 0.3s ease;
+            background-color: #f9f9f9;
+        }
+
+        /* 聚焦时的发光效果 */
+        .input-group input:focus,
+        .input-group select:focus {
+            border-color: #667eea;
+            background-color: #fff;
+            box-shadow: 0 0 8px rgba(102, 126, 234, 0.3);
+        }
+
+        /* 5. 提交按钮样式 */
+        .submit-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+            letter-spacing: 2px;
+        }
+
+        .submit-btn:hover {
+            background: linear-gradient(135deg, #5a6fd1 0%, #6a4191 100%);
+            box-shadow: 0 5px 15px rgba(118, 75, 162, 0.4);
+            transform: scale(1.02);
+        }
+
+        .submit-btn:active {
+            transform: scale(0.98);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-card">
+        <h2>系统登录</h2>
+
+        <!-- 注意：action 需要根据你 Flask 的实际路由名进行修改，这里暂定为 /login -->
+        <form action="/login" method="POST">
+
+            <!-- 账号输入框 -->
+            <div class="input-group">
+                <label for="mobile">账号</label>
+                <input type="text" id="mobile" name="mobile" placeholder="请输入账号" required autocomplete="off">
+            </div>
+
+            <!-- 密码输入框 -->
+            <div class="input-group">
+                <label for="password">密码</label>
+                <input type="password" id="password" name="password" placeholder="请输入密码" required>
+            </div>
+
+            <!-- 提交按钮 -->
+            <button type="submit" class="submit-btn">登 录</button>
+            <span style="color:red;">{{ error }}</span>
+        </form>
+    </div>
+
+</body>
+</html>

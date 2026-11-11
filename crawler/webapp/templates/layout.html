@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}采集调度{% endblock %}</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+                         "Hiragino Sans GB", "Microsoft YaHei", Roboto, Helvetica, Arial, sans-serif;
+            font-size: 14px;
+            color: #2c3e50;
+            background: linear-gradient(135deg, #eef2f7 0%, #dfe7f1 100%);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ================= 顶部导航栏 ================= */
+        .navbar {
+            background: #ffffff;
+            border-bottom: 1px solid #e6ecf4;
+            box-shadow: 0 2px 8px rgba(31, 45, 61, 0.05);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .navbar-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 24px;
+        }
+
+        .navbar-left {
+            display: flex;
+            align-items: center;
+            gap: 32px;
+            min-width: 0;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 17px;
+            font-weight: 700;
+            color: #1f2d3d;
+            text-decoration: none;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .logo-mark {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #4a6cf7 0%, #3b5bdb 100%);
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: 800;
+            box-shadow: 0 4px 10px rgba(74, 108, 247, 0.35);
+        }
+
+        .logo span {
+            color: #4a6cf7;
+        }
+
+        .main-nav {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .main-nav a {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #64748b;
+            text-decoration: none;
+            white-space: nowrap;
+            transition: all 0.2s ease;
+        }
+
+        .main-nav a:hover {
+            color: #4a6cf7;
+            background-color: rgba(74, 108, 247, 0.08);
+        }
+
+        .main-nav a.active {
+            color: #4a6cf7;
+            background-color: rgba(74, 108, 247, 0.12);
+        }
+
+        /* ================= 右侧：用户下拉 ================= */
+        .user-dropdown {
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .user-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 5px 12px 5px 5px;
+            background: #f7f9fc;
+            border: 1px solid #e6ecf4;
+            border-radius: 999px;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.2s ease;
+            font-family: inherit;
+            font-size: inherit;
+        }
+
+        .user-badge:hover {
+            background: #eef3ff;
+            border-color: #c7d4ee;
+        }
+
+        .user-badge .caret {
+            width: 14px;
+            height: 14px;
+            color: #94a3b8;
+            flex-shrink: 0;
+            transition: transform 0.25s ease;
+        }
+
+        .user-dropdown.open .caret {
+            transform: rotate(180deg);
+        }
+
+        .user-avatar {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #4a6cf7 0%, #3b5bdb 100%);
+            color: #ffffff;
+            font-weight: 700;
+            font-size: 14px;
+            text-transform: uppercase;
+            flex-shrink: 0;
+        }
+
+        .user-name {
+            font-weight: 600;
+            color: #2c3e50;
+            max-width: 160px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* 下拉菜单 */
+        .dropdown-menu {
+            position: absolute;
+            top: calc(100% + 10px);
+            right: 0;
+            min-width: 180px;
+            padding: 6px;
+            background: #ffffff;
+            border: 1px solid #e6ecf4;
+            border-radius: 12px;
+            box-shadow: 0 12px 32px rgba(31, 45, 61, 0.12),
+                        0 4px 12px rgba(31, 45, 61, 0.06);
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-6px);
+            transition: all 0.2s ease;
+            z-index: 200;
+        }
+
+        .user-dropdown.open .dropdown-menu {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .dropdown-menu::before {
+            content: "";
+            position: absolute;
+            top: -6px;
+            right: 22px;
+            width: 12px;
+            height: 12px;
+            background: #ffffff;
+            border-left: 1px solid #e6ecf4;
+            border-top: 1px solid #e6ecf4;
+            transform: rotate(45deg);
+            border-radius: 2px 0 0 0;
+        }
+
+        .dropdown-header {
+            padding: 8px 12px 10px;
+            border-bottom: 1px solid #edf1f7;
+            margin-bottom: 4px;
+        }
+
+        .dropdown-header .label {
+            font-size: 11px;
+            color: #94a3b8;
+            letter-spacing: 0.3px;
+            text-transform: uppercase;
+        }
+
+        .dropdown-header .value {
+            margin-top: 2px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #1f2d3d;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 9px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #475569;
+            text-decoration: none;
+            transition: all 0.15s ease;
+        }
+
+        .dropdown-item:hover {
+            color: #b91c1c;
+            background-color: #fee2e2;
+        }
+
+        .dropdown-item svg {
+            width: 15px;
+            height: 15px;
+            flex-shrink: 0;
+        }
+
+        /* ================= 页面主体 ================= */
+        .page-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 32px 20px 48px;
+        }
+
+        .page-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-bottom: 18px;
+        }
+
+        .page-title {
+            margin: 0;
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+            color: #1f2d3d;
+        }
+
+        .page-title span {
+            color: #4a6cf7;
+        }
+
+        /* ================= 通用按钮 ================= */
+        .btn-create {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 22px;
+            border-radius: 9px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #ffffff;
+            text-decoration: none;
+            background: linear-gradient(180deg, #4a6cf7 0%, #3b5bdb 100%);
+            box-shadow: 0 4px 14px rgba(74, 108, 247, 0.35);
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .btn-create:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 18px rgba(74, 108, 247, 0.45);
+        }
+
+        .btn-create:active {
+            transform: translateY(0);
+            box-shadow: 0 3px 10px rgba(74, 108, 247, 0.35);
+        }
+
+        .btn-create svg {
+            width: 16px;
+            height: 16px;
+            flex-shrink: 0;
+        }
+
+        .btn-back {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 9px 18px;
+            border-radius: 9px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #4a6cf7;
+            text-decoration: none;
+            background: #ffffff;
+            border: 1px solid #dbe4f3;
+            box-shadow: 0 2px 6px rgba(31, 45, 61, 0.05);
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .btn-back:hover {
+            background: #f4f7ff;
+            border-color: #c7d4ee;
+            transform: translateY(-1px);
+        }
+
+        .btn-back svg {
+            width: 15px;
+            height: 15px;
+            flex-shrink: 0;
+        }
+
+        /* ================= 响应式（通用部分） ================= */
+        @media (max-width: 720px) {
+            .navbar-inner {
+                padding: 0 14px;
+                gap: 12px;
+                height: 60px;
+            }
+
+            .navbar-left {
+                gap: 16px;
+            }
+
+            .logo-text {
+                display: none;
+            }
+
+            .main-nav a {
+                padding: 8px 10px;
+                font-size: 13px;
+            }
+
+            .user-name {
+                max-width: 90px;
+            }
+
+            .page-container {
+                padding: 24px 12px 40px;
+            }
+
+            .page-title {
+                font-size: 18px;
+            }
+
+            .btn-create {
+                padding: 9px 16px;
+                font-size: 13px;
+            }
+
+            .btn-back {
+                padding: 8px 14px;
+                font-size: 13px;
+            }
+        }
+
+        .table-wrapper {
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(31, 45, 61, 0.08),
+                        0 2px 8px rgba(31, 45, 61, 0.04);
+            overflow: hidden;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead th {
+            padding: 16px 20px;
+            text-align: left;
+            font-size: 13px;
+            font-weight: 600;
+            color: #ffffff;
+            background: linear-gradient(180deg, #4a6cf7 0%, #3b5bdb 100%);
+            white-space: nowrap;
+        }
+
+        tbody td {
+            padding: 14px 20px;
+            border-bottom: 1px solid #edf1f7;
+            vertical-align: middle;
+        }
+
+        tbody tr:hover {
+            background: #eef3ff;
+        }
+
+        .role-badge,
+        .export-link {
+            display: inline-flex;
+            align-items: center;
+            padding: 5px 12px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+            text-decoration: none;
+        }
+
+        .role-admin { color: #1d4ed8; background: #dbeafe; }
+        .role-user { color: #475569; background: #e2e8f0; }
+        .export-link { color: #4a6cf7; background: #eef3ff; }
+
+        .metrics-bar {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+
+        .metric-card {
+            min-width: 120px;
+            padding: 12px 14px;
+            background: #ffffff;
+            border: 1px solid #e6ecf4;
+            border-radius: 12px;
+        }
+
+        .metric-card span {
+            display: block;
+            color: #64748b;
+            font-size: 12px;
+        }
+
+        .metric-card strong {
+            display: block;
+            margin-top: 4px;
+            color: #1f2d3d;
+            font-size: 18px;
+        }
+
+        /* ================= 子模板追加样式 ================= */
+        {% block extra_styles %}{% endblock %}
+    </style>
+</head>
+<body>
+
+<!-- ================= 顶部导航栏 ================= -->
+<header class="navbar">
+    <div class="navbar-inner">
+        <div class="navbar-left">
+            <a href="/" class="logo">
+                <span class="logo-mark">采</span>
+                <span class="logo-text">采集<span>调度</span></span>
+            </a>
+
+            <nav class="main-nav">
+                {% if get_role() == 2 %}
+                <a href="/user/list" class="{% block nav_user_active %}{% endblock %}">用户管理</a>
+                {% endif %}
+                <a href="/order/list" class="{% block nav_order_active %}{% endblock %}">订单管理</a>
+            </nav>
+        </div>
+
+        <!-- 右上角用户名 全局函数调用名字 -->
+        {% set real_name = get_real_name() %}
+        <div class="user-dropdown" id="userDropdown">
+            <button type="button" class="user-badge" id="userBadge" aria-haspopup="true" aria-expanded="false">
+                <span class="user-avatar">
+                    {% if real_name %}
+                        {{ real_name[0] | upper }}
+                    {% else %}
+                        ?
+                    {% endif %}
+                </span>
+                <span class="user-name">
+                    {% if real_name %}
+                        {{ real_name }}
+                    {% else %}
+                        未登录
+                    {% endif %}
+                </span>
+                <svg class="caret" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+            </button>
+
+            <!-- 下拉菜单 -->
+            <div class="dropdown-menu" role="menu">
+                <div class="dropdown-header">
+                    <div class="label">当前登录</div>
+                    <div class="value">
+                        {% if real_name %}{{ real_name }}{% else %}未登录{% endif %}
+                    </div>
+                </div>
+                <a href="/login" class="dropdown-item" role="menuitem">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                        <polyline points="16 17 21 12 16 7"></polyline>
+                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                    </svg>
+                    退出登录
+                </a>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- ================= 页面主体 ================= -->
+<main class="page-container">
+
+    <!-- 标题 + 工具栏右侧按钮 -->
+    <div class="page-toolbar">
+        <h1 class="page-title">{% block page_title %}{% endblock %}</h1>
+        {% block toolbar_action %}{% endblock %}
+    </div>
+
+    <!-- 主体内容 -->
+    {% block content %}{% endblock %}
+
+</main>
+
+<script>
+(function () {
+    var dropdown = document.getElementById('userDropdown');
+    var badge = document.getElementById('userBadge');
+    if (!dropdown || !badge) return;
+
+    function close() {
+        dropdown.classList.remove('open');
+        badge.setAttribute('aria-expanded', 'false');
+    }
+
+    badge.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var isOpen = dropdown.classList.toggle('open');
+        badge.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    });
+
+    // 点击菜单外关闭
+    document.addEventListener('click', function (e) {
+        if (!dropdown.contains(e.target)) close();
+    });
+
+    // ESC 关闭
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') close();
+    });
+})();
+</script>
+
+</body>
+</html>

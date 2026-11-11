@@ -1,0 +1,36 @@
+{% extends "layout.html" %}
+
+{% block title %}用户管理{% endblock %}
+{% block nav_user_active %}active{% endblock %}
+{% block page_title %}用户<span>管理</span>{% endblock %}
+
+{% block content %}
+<div class="table-wrapper">
+    <table>
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>姓名</th>
+            <th>角色</th>
+            <th>订单数</th>
+            <th>操作</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for user in users %}
+        <tr>
+            <td>{{ user.id }}</td>
+            <td>{{ user.real_name }}</td>
+            <td>
+                <span class="role-badge {{ 'role-admin' if user.role == 2 else 'role-user' }}">
+                    {{ "管理员" if user.role == 2 else "普通用户" }}
+                </span>
+            </td>
+            <td>{{ user.order_count }}</td>
+            <td><a class="export-link" href="/order/export.csv?user_id={{ user.id }}">导出数据</a></td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

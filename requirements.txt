@@ -1,0 +1,6 @@
+Flask
+PyMySQL
+DBUtils
+redis
+requests
+playwright
