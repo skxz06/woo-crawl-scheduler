@@ -1,6 +1,6 @@
 # WooCommerce 采集调度系统
 
-这个项目用一个真实的 WooCommerce 公开接口，演示采集系统的任务调度，而不是追求采集数量。
+这个系统调度 WooCommerce 公开商品接口的采集任务。后台创建任务，独立 Worker 请求店铺接口，并把结果写入 MySQL。
 
 系统只有一条主链路：用户在 Flask 后台创建订单，独立 Worker 从 Redis 领取订单，请求店铺公开接口，并把商品写入 MySQL。
 
@@ -49,7 +49,7 @@ MySQL crawler_platform          Redis crawl:orders
 
 商品唯一键是 `order_id + external_id`。同一个订单重复执行时更新原商品，不新增第二行。
 
-Redis Stream 消费组保证一条新消息每次只被一个 Worker 领取。验证时 `worker-a` 和 `worker-b` 分别处理了订单 20、21，没有抢同一条消息。
+Redis Stream 消费组保证一条新消息每次只被一个 Worker 领取。多个 Worker 同时运行时会各自领取不同订单。
 
 ### 失败按原因分级
 
@@ -65,19 +65,9 @@ Redis Stream 消费组保证一条新消息每次只被一个 Worker 领取。�
 
 普通用户只能查看、导出和重试自己的订单。管理员可以查看所有订单和用户列表，并按用户导出 CSV。用户密码使用哈希校验，查询页面不返回密码字段。
 
-## 已验证结果
-
-- 未登录访问 `/` 返回 302，跳转到 `/login`。
-- 创建 WooCommerce 订单后，Worker 请求公开 Store API。订单 27 由 `worker-1` 完成，保存了 2 个商品。
-- 两个 Worker 同时等待时分别处理订单 20、21，未确认消息最终为 0。
-- 连续 3 次失败后进入 `crawl:dead-letters`；`403` 第一次就进入死信。
-- JSON 契约失效时，本机 Chrome 读取公开商店页并保存了 3 个商品。
-- 普通用户访问 `/user/list` 会跳回订单列表；管理员可以打开用户列表。
-- 失败分类测试位于 `crawler/tests/test_failure_policy.py`，不访问真实网站。
-
 ## 本地部署
 
-商店不需要打包上传。`woo-practice/compose.yaml` 会在本地启动官方 WordPress 和 MariaDB 镜像，商品与后台数据保存在 Docker 卷中。别人克隆仓库后执行同样的 Compose 命令，会得到一套新的空店铺，再导入 `sample-products.csv` 即可复现。
+`woo-practice/compose.yaml` 使用官方 WordPress 和 MariaDB 镜像启动一个本地店铺。店铺数据保存在 Docker 卷中，不会进入 Git 仓库。首次启动后得到的是空店铺，导入示例商品即可使用。
 
 ```bash
 cp woo-practice/.env.example woo-practice/.env
@@ -99,31 +89,7 @@ python3 -m venv .venv
 
 打开 `http://127.0.0.1:5000/`。未登录会进入登录页。
 
-不要提交 `.env`、Docker 卷、数据库备份或镜像包。这些文件要么含有密码，要么体积大且只能在你的机器上使用。
-
-## GitHub 仓库结构
-
-```text
-.
-├── README.md
-├── requirements.txt
-├── schema.sql
-├── .env.example
-├── .gitignore
-├── crawler/
-│   ├── app.py
-│   ├── worker.py
-│   ├── utils/
-│   ├── tests/
-│   └── webapp/
-└── woo-practice/
-    ├── compose.yaml
-    ├── .env.example
-    ├── sample-products.csv
-    └── README.md
-```
-
-不上传 `.env`、`.venv/`、`.idea/`、`__pycache__/`、`woo-practice/bin/` 和任何 `.tar` 镜像包。
+本地配置从 `.env` 读取，仓库只提供 `.env.example`。修改密码后不要把真实配置提交到 Git。
 
 ## 目录
 
