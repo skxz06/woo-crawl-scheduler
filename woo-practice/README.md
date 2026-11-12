@@ -140,48 +140,17 @@ docker compose stop
 
 `crawl_pages` 保存页面进度。`shop + page_no` 是唯一键，`status` 只使用 `pending`、`done`、`failed`。当前程序会在一页商品全部保存成功后写入 `done`；商品保存中途崩溃时，这一页不会被标成完成。跳过已完成页面的逻辑还没有实现。
 
-## 上传到 GitHub 的范围
+## 与采集服务的关系
 
-仓库包含接口说明、建表语句和示例商品。数据库密码放在本地 `.env`，Docker 卷和数据库备份不进入版本库。
-
-必须忽略：
-
-- `.env`：数据库密码和 WordPress 后台密码。
-- `wp/`、`bin/`、`*.tar`：容器数据、下载工具和镜像包。
-- MySQL 数据目录及数据库备份。
-
-README 要说明接口契约、本地启动方式、数据表和合规边界，但不写任何真实密码、后台用户名或个人邮箱。
-
-## 计划中的结构
-
-1. 单进程采集：已完成。
-2. 真实接口对照：保存一页脱敏响应，确认字段和本地契约一致。
-3. MySQL：以 `platform + shop + product_id` 做幂等写入，并保存页码断点。
-4. Redis：用 Stream 消费组分配页面任务，用租约和 ACK 处理 Worker 崩溃。
-5. Flask：提供启动任务、查看状态和重放死信的控制接口。
-6. 降级：公开 JSON 失效后才解析同一公开 HTML；拒绝访问时进入死信，不启动浏览器。
-
-MySQL 要先于 Redis。队列只能保证任务被分发，不能代替数据库的唯一键；没有唯一键时，重复投递和 Worker 崩溃恢复都会插入重复商品。
-
-Redis 使用 Stream `woo:pages` 和消费组 `workers`。消息只保存 `shop` 和 `page`。Worker 用 `XREADGROUP` 领取新任务，处理完商品并写入 `crawl_pages` 后才 `XACK`。崩溃后超过 60 秒仍未确认的消息，由 `XAUTOCLAIM` 接管。
-
-`app.py` 是控制面，只提供两个接口：
-
-- `POST /crawl/start`：把练习店的 6 页放进 Redis。
-- `GET /crawl/status`：返回 Stream 长度和未确认消息数。
-
-本目录的早期独立控制面已经删除。采集调度由根目录 `crawler/` 中的 Flask 和 Worker 完成。
+本目录只提供本地店铺和公开接口。任务创建、Redis 调度、失败重试和结果入库由仓库根目录的 `crawler/` 实现。
 
 ## 当前目录
 
 ```text
 woo-practice/
 ├── README.md
-├── app.py             # Flask 控制面
-├── task_queue.py      # Redis Stream 队列
 ├── compose.yaml
-├── schema.sql
 ├── sample-products.csv
-├── .env               # 本地配置，已由 Git 忽略
+├── .env.example
 └── .gitignore
 ```
